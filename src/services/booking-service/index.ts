@@ -23,13 +23,36 @@ async function postBooking(userId: number, roomId: number) {
     throw httpStatus.FORBIDDEN;
   }
   
-  return await bookingRepository.createBooking(userId, roomId);
+  const booking = await bookingRepository.createBooking(userId, roomId);
+  return { bookingId: booking.id };
 }
 
-async function getBooking(userId: number){
-  
+async function getBooking(userId: number) {
+  const booking = await bookingRepository.findBooking(userId);
+  if (!booking) {
+    throw httpStatus.NOT_FOUND;
+  }
+  return exclude(booking, "userId", "createdAt", "updatedAt", "roomId");
 }
 
-const bookingService = { postBooking };
+async function putBooking(userId: number, roomId: number, bookingId: number) {
+  if(bookingId<=0) {
+    throw httpStatus.NOT_FOUND;
+  }
+  const booking = await bookingRepository.findBooking(userId);
+  if (!booking) {
+    throw httpStatus.NOT_FOUND;
+  }
+  const room = await findRoom(roomId);
+  if (!room) {
+    throw httpStatus.NOT_FOUND;
+  }
+  if (room.capacity===0) {
+    throw httpStatus.FORBIDDEN;
+  }
+  return await bookingRepository.updateBooking(bookingId, roomId);
+}
+
+const bookingService = { postBooking, getBooking, putBooking };
 
 export default bookingService;
